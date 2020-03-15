@@ -1,15 +1,16 @@
 package ruslan.simakov.stockandshares.service.impl;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import ruslan.simakov.stockandshares.model.Company;
 import ruslan.simakov.stockandshares.model.Stock;
-import ruslan.simakov.stockandshares.model.dto.StockDto;
 import ruslan.simakov.stockandshares.repository.StockRepository;
 import ruslan.simakov.stockandshares.service.StockService;
 import java.io.IOException;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -27,57 +28,53 @@ public class StockServiceImpl implements StockService {
     @Autowired
     private StockRepository stockRepository;
 
-    public static final String STOCKS_API_ENDPOINT = "https://sandbox.iexapis.com/stable/";
+    private List<Stock> listStock = new ArrayList<>();
 
+    public static final String STOCKS_API_ENDPOINT = "https://sandbox.iexapis.com/stable/";
+    public static final String TOKEN = "Tpk_ee567917a6b640bb8602834c9d30e571";
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
-    public List<StockDto> getStocksInfoFromWeb() {
+    public List<Stock> getStocksInfoFromWeb() {
 
         HttpGet request = new HttpGet(STOCKS_API_ENDPOINT
-                + "ref-data/symbols?token=Tpk_ee567917a6b640bb8602834c9d30e571");
-        List<StockDto> listStockDto = new ArrayList<>();
+                + "ref-data/symbols?" + "token=" + TOKEN);
+
 
         try (CloseableHttpClient httpClient = HttpClients.createDefault();
              CloseableHttpResponse response = httpClient.execute(request)) {
 
             HttpEntity entity = response.getEntity();
             if (entity != null) {
-                listStockDto.addAll(objectMapper.readValue(EntityUtils.toString(entity),
-                        List.class));
+                listStock = objectMapper.readValue(EntityUtils.toString(entity),
+                        new TypeReference<List<Stock>>() {
+                        });
             }
         } catch (IOException e) {
             log.error("Can't get data from web!");
             throw new RuntimeException("Can't get data from web!", e);
         }
-        return listStockDto;
+        return listStock;
     }
 
     @Override
-    public void addStocksInfoToDataBase(List<StockDto> listStockDto) {
-        List<Stock> listStocks = transferStocksDtoToStocks(listStockDto);
-        stockRepository.saveAll(listStocks);
+    public void addStocksInfoToDataBase(List<Stock> listStock) {
+        stockRepository.saveAll(listStock);
     }
 
-    private List<Stock> transferStocksDtoToStocks(List<StockDto> listStockDto) {
-        List<Stock> listStocks = new ArrayList<>();
-        Stock stock = new Stock();
-        for (StockDto stockDto : listStockDto) {
+    @Override
+    public Stock getStockById(Long id) {
+        return stockRepository.getOne(id);
+    }
 
-            stock.setSymbol(stockDto.getSymbol());
-            stock.setExchange(stockDto.getExchange());
-            stock.setName(stockDto.getName());
-            stock.setDate(stockDto.getDate());
-            stock.setType(stockDto.getType());
-            stock.setIexId(stockDto.getIexId());
-            stock.setRegion(stockDto.getRegion());
-            stock.setCurrency(stockDto.getCurrency());
-            stock.setIsEnabled(stockDto.getIsEnabled());
-            stock.setFigi(stockDto.getFigi());
-            stock.setCik(stockDto.getCik());
-            listStocks.add(stock);
-        }
-        return listStocks;
+    @Override
+    public List<Company> getTopFiveHighestValueStocks() {
+        return null;
+    }
+
+    @Override
+    public List<Company> getTopFiveCompaniesWithGreatestChangePercentInStockValue() {
+        return null;
     }
 }
