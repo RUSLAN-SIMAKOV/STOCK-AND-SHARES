@@ -1,12 +1,18 @@
 package ruslan.simakov.stockandshares.service;
 
-import ruslan.simakov.stockandshares.model.dto.StockDto;
-import java.io.IOException;
+import ruslan.simakov.stockandshares.model.Company;
+import ruslan.simakov.stockandshares.model.Stock;
 import java.util.List;
 
 public interface StockService {
 
-    List<StockDto> getStocksInfoFromWeb();
+    List<Stock> getStocksInfoFromWeb();
 
-    void addStocksInfoToDataBase(List<StockDto> listStockDto);
+    void addStocksInfoToDataBase(List<Stock> listStock);
+
+    Stock getStockById(Long id);
+
+    List<Company> getTopFiveHighestValueStocks();
+
+    List<Company> getTopFiveCompaniesWithGreatestChangePercentInStockValue();
 }
